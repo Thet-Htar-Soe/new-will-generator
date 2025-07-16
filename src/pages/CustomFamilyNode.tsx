@@ -38,15 +38,17 @@ const CustomFamilyNode = ({ id, data, setEditingNodeId, setOpenDialog }: CustomF
         <div className="flex items-center">
           <span className="text-gray-500 text-sm">Total Assets</span>
           <div className="font-medium ml-1">${nodeData.assets}</div>
-          <button
-            onClick={() => {
-              setEditingNodeId(id);
-              setOpenDialog(true);
-            }}
-            className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
-          >
-            Edit
-          </button>
+          {nodeData.relationship && (
+            <button
+              onClick={() => {
+                setEditingNodeId(id);
+                setOpenDialog(true);
+              }}
+              className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
+            >
+              Edit
+            </button>
+          )}
         </div>
 
         {nodeData.assignedAssets && nodeData.assignedAssets.length > 0 && (
