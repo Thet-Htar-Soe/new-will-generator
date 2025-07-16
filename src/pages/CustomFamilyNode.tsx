@@ -5,10 +5,11 @@ type AssignedAsset = {
   amount: number;
 };
 
-type NodeData = Record<string, unknown> & {
+type NodeData = {
   name: string;
   relationship?: string;
   assets: number;
+  assetId?: string;
   assignedAssets?: AssignedAsset[];
 };
 
@@ -18,23 +19,25 @@ type CustomFamilyNodeProps = NodeProps<NodeData> & {
 };
 
 const CustomFamilyNode = ({ id, data, setEditingNodeId, setOpenDialog }: CustomFamilyNodeProps) => {
+  const nodeData = data as NodeData;
+
   return (
     <div className="bg-white rounded-xl shadow-md px-4 py-2 border border-gray-300 text-left text-black w-60 relative">
       <div className="space-y-1">
         <div className="flex items-center">
           <span className="text-gray-500 text-sm">Name</span>
-          <div className="font-semibold ml-1">{data.name}</div>
+          <div className="font-semibold ml-1">{nodeData.name}</div>
         </div>
-        {data.relationship && (
+        {nodeData.relationship && (
           <div className="flex items-center">
             <span className="text-gray-500 text-sm">Relationship</span>
-            <div className="ml-1">{data.relationship || "-"}</div>
+            <div className="ml-1">{nodeData.relationship || "-"}</div>
           </div>
         )}
 
         <div className="flex items-center">
           <span className="text-gray-500 text-sm">Total Assets</span>
-          <div className="font-medium ml-1">${data.assets}</div>
+          <div className="font-medium ml-1">${nodeData.assets}</div>
           <button
             onClick={() => {
               setEditingNodeId(id);
@@ -46,10 +49,10 @@ const CustomFamilyNode = ({ id, data, setEditingNodeId, setOpenDialog }: CustomF
           </button>
         </div>
 
-        {data.assignedAssets && data.assignedAssets.length > 0 && (
+        {nodeData.assignedAssets && nodeData.assignedAssets.length > 0 && (
           <div>
             <ul className="list-disc list-inside">
-              {data.assignedAssets.map((a) => (
+              {nodeData.assignedAssets.map((a) => (
                 <li key={a.id}>
                   {a.id}: ${a.amount}
                 </li>
