@@ -167,7 +167,9 @@ const MainFlow = () => {
                 <div className="bg-white p-4 rounded-md shadow">
                   <DialogHeader>
                     <DialogTitle>
-                      Edit Asset Allocations for {nodes.find((n) => n.id === editingNodeId)?.data.name}
+                      {edges.some((e) => e.target === editingNodeId)
+                        ? `Edit Asset Allocations for ${nodes.find((n) => n.id === editingNodeId)?.data.name}`
+                        : "Please make connection first"}
                     </DialogTitle>
                   </DialogHeader>
 
