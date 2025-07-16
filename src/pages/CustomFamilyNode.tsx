@@ -1,11 +1,11 @@
-import { Handle, type NodeProps } from "@xyflow/react";
+import { Handle, type NodeProps, Position } from "@xyflow/react";
 
 type AssignedAsset = {
   id: string;
   amount: number;
 };
 
-type NodeData = {
+type NodeData = Record<string, unknown> & {
   name: string;
   relationship?: string;
   assets: number;
@@ -59,10 +59,14 @@ const CustomFamilyNode = ({ id, data, setEditingNodeId, setOpenDialog }: CustomF
         )}
       </div>
 
-      <Handle type="target" position="top" style={{ width: 15, height: 15, borderRadius: "50%", background: "#555" }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ width: 15, height: 15, borderRadius: "50%", background: "#555" }}
+      />
       <Handle
         type="source"
-        position="bottom"
+        position={Position.Bottom}
         style={{ width: 15, height: 15, borderRadius: "50%", background: "#555" }}
       />
     </div>

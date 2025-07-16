@@ -93,7 +93,7 @@ const MainFlow = () => {
   };
 
   useEffect(() => {
-    setNodes((prevNodes) => {
+    setNodes((prevNodes): Node<FamilyNodeData>[] => {
       return prevNodes.map((node) => {
         if (node.id.startsWith("family_")) {
           const incomingEdges = edges.filter((e) => e.target === node.id);
@@ -104,7 +104,7 @@ const MainFlow = () => {
               if (assetNode && assetNode.data.assetId) {
                 return {
                   id: assetNode.data.assetId,
-                  amount: typeof edge.data.amount === "number" ? edge.data.amount : 0,
+                  amount: typeof edge.data?.amount === "number" ? edge.data.amount : 0,
                 };
               }
               return null;
@@ -149,6 +149,7 @@ const MainFlow = () => {
               onConnect={(params: Connection) => {
                 setEdges((edges) => {
                   const newEdge: Edge<CustomEdgeData> = {
+                    id: `${params.source}-${params.target}`,
                     ...params,
                     data: { amount: 0 },
                   };
@@ -180,7 +181,7 @@ const MainFlow = () => {
                             <span className="flex-1">{assetNode?.data.name}</span>
                             <input
                               type="number"
-                              value={edge.data.amount === "" ? "" : edge.data.amount}
+                              value={edge.data?.amount === "" ? "" : edge.data?.amount}
                               className="border p-1 w-24"
                               onChange={(e) => {
                                 const val = e.target.value;
