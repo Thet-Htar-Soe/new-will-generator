@@ -1,26 +1,42 @@
 import { Handle } from "@xyflow/react";
-// import EditIcon from "../components/EditIcon";
-// import { useCallback } from "react";
 
-const CustomFamilyNode = ({ data, id, setEditingNodeId, setOpenDialog }: any) => {
-  console.log("these are data", data);
+type AssignedAsset = {
+  id: string;
+  amount: number;
+};
+
+type NodeData = {
+  name: string;
+  relationship?: string;
+  assets: number;
+  assignedAssets?: AssignedAsset[];
+};
+
+type CustomFamilyNodeProps = {
+  data: NodeData;
+  id: string;
+  setEditingNodeId: (id: string) => void;
+  setOpenDialog: (open: boolean) => void;
+};
+
+const CustomFamilyNode = ({ data, id, setEditingNodeId, setOpenDialog }: CustomFamilyNodeProps) => {
   return (
     <div className="bg-white rounded-xl shadow-md px-4 py-2 border border-gray-300 text-left text-black w-60 relative">
       <div className="space-y-1">
         <div className="flex items-center">
           <span className="text-gray-500 text-sm">Name</span>
-          <div className="font-semibold">{data.name}</div>
+          <div className="font-semibold ml-1">{data.name}</div>
         </div>
         {data.relationship && (
           <div className="flex items-center">
             <span className="text-gray-500 text-sm">Relationship</span>
-            <div className="">{data.relationship || "-"}</div>
+            <div className="ml-1">{data.relationship || "-"}</div>
           </div>
         )}
 
         <div className="flex items-center">
           <span className="text-gray-500 text-sm">Total Assets</span>
-          <div className="font-medium">${data.assets}</div>
+          <div className="font-medium ml-1">${data.assets}</div>
           <button
             onClick={() => {
               setEditingNodeId(id);

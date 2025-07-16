@@ -6,30 +6,37 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
-  MiniMap,
 } from "@xyflow/react";
 import { useState, useMemo, useEffect } from "react";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 
 import "@xyflow/react/dist/style.css";
-import type { Node } from "@xyflow/react";
+import type { Node, Edge, Connection } from "@xyflow/react";
 
 import ClientForm, { type FormData } from "../components/ClientForm";
-
 import CustomFamilyNode from "./CustomFamilyNode";
 
+type AssignedAsset = {
+  id: string;
+  amount: number;
+};
+
+type FamilyNodeData = {
+  name: string;
+  relationship?: string;
+  assets: number;
+  assetId?: string;
+  assignedAssets?: AssignedAsset[];
+};
+
+type CustomEdgeData = {
+  amount: number | "";
+};
+
 const MainFlow = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<FamilyNodeData>>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<CustomEdgeData>>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [assetOptions, setAssetOptions] = useState<number[]>([]);
   const [familyOptions, setFamilyOptions] = useState<number[]>([]);
@@ -41,30 +48,26 @@ const MainFlow = () => {
 
   const handleFormSubmit = (data: FormData) => {
     setFormData(data);
-
     setAssetOptions([data.asset_one, data.asset_two, data.asset_three]);
     setFamilyOptions(data.family_mem.map((m) => m.id));
-
     setIsSubmitted(true);
-    // navigate("/analysis");
   };
 
   const handleCreateDiagram = () => {
     if (!formData) return;
 
-    const newAssetNodes = assetOptions.map((assetVal, index) => ({
+    const newAssetNodes: Node<FamilyNodeData>[] = assetOptions.map((assetVal, index) => ({
       id: `asset_${index + 1}`,
       type: "customFamily",
       data: {
         name: `Asset ${index + 1}`,
-        relationship: "",
         assets: assetVal,
         assetId: `asset_${index + 1}`,
       },
       position: { x: 250 * index, y: 0 },
     }));
 
-    const familyNodes = formData.family_mem
+    const familyNodes: Node<FamilyNodeData>[] = formData.family_mem
       .filter((member) => familyOptions.includes(member.id))
       .map((member, index) => ({
         id: `family_${member.id}`,
@@ -101,12 +104,12 @@ const MainFlow = () => {
               if (assetNode && assetNode.data.assetId) {
                 return {
                   id: assetNode.data.assetId,
-                  amount: edge.data.amount || 0,
+                  amount: typeof edge.data.amount === "number" ? edge.data.amount : 0,
                 };
               }
               return null;
             })
-            .filter(Boolean);
+            .filter(Boolean) as AssignedAsset[];
 
           const totalAssets = assignedAssets.reduce((sum, a) => sum + a.amount, 0);
 
@@ -124,14 +127,13 @@ const MainFlow = () => {
     });
   }, [edges]);
 
-  const nodeTypes = useMemo(
-    () => ({
-      customFamily: (nodeProps: any) => (
+  const nodeTypes = useMemo(() => {
+    return {
+      customFamily: (nodeProps: Node<FamilyNodeData>) => (
         <CustomFamilyNode {...nodeProps} setEditingNodeId={setEditingNodeId} setOpenDialog={setOpenDialog} />
       ),
-    }),
-    []
-  );
+    };
+  }, []);
 
   return (
     <div className="flex flex-col items-center w-full space-y-8">
@@ -144,23 +146,21 @@ const MainFlow = () => {
               edges={edges}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
-              // onConnect={(params) => setEdges((eds) => addEdge(params, eds))}
-              onConnect={(params) => {
+              onConnect={(params: Connection) => {
                 setEdges((edges) => {
-                  const newEdge = {
+                  const newEdge: Edge<CustomEdgeData> = {
                     ...params,
                     data: { amount: 0 },
                   };
                   return addEdge(newEdge, edges);
                 });
               }}
-              // fitView
               nodeTypes={nodeTypes}
             >
-              {/* <MiniMap /> */}
               <Controls />
               <Background />
             </ReactFlow>
+
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
               <DialogContent>
                 <div className="bg-white p-4 rounded-md shadow">
@@ -178,20 +178,6 @@ const MainFlow = () => {
                         return (
                           <div key={edge.id} className="flex items-center gap-2">
                             <span className="flex-1">{assetNode?.data.name}</span>
-                            {/* <input
-                              type="number"
-                              value={edge.data.amount}
-                              className="border p-1 w-24"
-                              onChange={(e) => {
-                                const newAmount = Number(e.target.value);
-                                setEdges((prevEdges) =>
-                                  prevEdges.map((ed) =>
-                                    ed.id === edge.id ? { ...ed, data: { ...ed.data, amount: newAmount } } : ed
-                                  )
-                                );
-                              }}
-                            /> */}
-
                             <input
                               type="number"
                               value={edge.data.amount === "" ? "" : edge.data.amount}
@@ -235,20 +221,19 @@ const MainFlow = () => {
         </>
       )}
 
-      {isSubmitted && nodes.length === 0 && (
+      {isSubmitted && nodes.length === 0 && formData && (
         <>
           <div className="flex space-x-6 p-4 border rounded-md max-w-lg w-full">
             <div className="bg-white text-black p-8 rounded-md border flex flex-col gap-4">
               <p className="font-semibold">Select Assets</p>
               <label className="block">
-                {" "}
                 <input
                   type="checkbox"
-                  checked={[formData!.asset_one, formData!.asset_two, formData!.asset_three].every((a) =>
+                  checked={[formData.asset_one, formData.asset_two, formData.asset_three].every((a) =>
                     assetOptions.includes(a)
                   )}
                   onChange={() => {
-                    const allAssets = [formData!.asset_one, formData!.asset_two, formData!.asset_three];
+                    const allAssets = [formData.asset_one, formData.asset_two, formData.asset_three];
                     if (allAssets.every((a) => assetOptions.includes(a))) {
                       setAssetOptions([]);
                     } else {
@@ -261,26 +246,26 @@ const MainFlow = () => {
               <label className="block">
                 <input
                   type="checkbox"
-                  checked={assetOptions.includes(formData!.asset_one)}
-                  onChange={() => toggleAsset(formData!.asset_one)}
+                  checked={assetOptions.includes(formData.asset_one)}
+                  onChange={() => toggleAsset(formData.asset_one)}
                 />
-                Asset One: {formData!.asset_one}
+                Asset One: {formData.asset_one}
               </label>
               <label className="block">
                 <input
                   type="checkbox"
-                  checked={assetOptions.includes(formData!.asset_two)}
-                  onChange={() => toggleAsset(formData!.asset_two)}
+                  checked={assetOptions.includes(formData.asset_two)}
+                  onChange={() => toggleAsset(formData.asset_two)}
                 />
-                Asset Two: {formData!.asset_two}
+                Asset Two: {formData.asset_two}
               </label>
               <label className="block">
                 <input
                   type="checkbox"
-                  checked={assetOptions.includes(formData!.asset_three)}
-                  onChange={() => toggleAsset(formData!.asset_three)}
+                  checked={assetOptions.includes(formData.asset_three)}
+                  onChange={() => toggleAsset(formData.asset_three)}
                 />
-                Asset Three: {formData!.asset_three}
+                Asset Three: {formData.asset_three}
               </label>
             </div>
 
@@ -289,18 +274,18 @@ const MainFlow = () => {
               <label className="block">
                 <input
                   type="checkbox"
-                  checked={formData!.family_mem.every((m) => familyOptions.includes(m.id))}
+                  checked={formData.family_mem.every((m) => familyOptions.includes(m.id))}
                   onChange={() => {
-                    if (formData!.family_mem.every((m) => familyOptions.includes(m.id))) {
+                    if (formData.family_mem.every((m) => familyOptions.includes(m.id))) {
                       setFamilyOptions([]);
                     } else {
-                      setFamilyOptions(formData!.family_mem.map((m) => m.id));
+                      setFamilyOptions(formData.family_mem.map((m) => m.id));
                     }
                   }}
                 />
                 Select All
               </label>
-              {formData!.family_mem.map((member) => (
+              {formData.family_mem.map((member) => (
                 <label key={member.id} className="block">
                   <input
                     type="checkbox"
