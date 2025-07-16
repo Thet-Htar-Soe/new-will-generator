@@ -1,4 +1,4 @@
-import { Handle } from "@xyflow/react";
+import { Handle, type NodeProps } from "@xyflow/react";
 
 type AssignedAsset = {
   id: string;
@@ -12,14 +12,12 @@ type NodeData = {
   assignedAssets?: AssignedAsset[];
 };
 
-type CustomFamilyNodeProps = {
-  data: NodeData;
-  id: string;
+type CustomFamilyNodeProps = NodeProps<NodeData> & {
   setEditingNodeId: (id: string) => void;
   setOpenDialog: (open: boolean) => void;
 };
 
-const CustomFamilyNode = ({ data, id, setEditingNodeId, setOpenDialog }: CustomFamilyNodeProps) => {
+const CustomFamilyNode = ({ id, data, setEditingNodeId, setOpenDialog }: CustomFamilyNodeProps) => {
   return (
     <div className="bg-white rounded-xl shadow-md px-4 py-2 border border-gray-300 text-left text-black w-60 relative">
       <div className="space-y-1">

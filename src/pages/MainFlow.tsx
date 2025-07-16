@@ -6,13 +6,14 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
+  type Node,
+  type Edge,
+  type Connection,
+  type NodeProps,
 } from "@xyflow/react";
 import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { useNavigate } from "react-router-dom";
-
 import "@xyflow/react/dist/style.css";
-import type { Node, Edge, Connection } from "@xyflow/react";
 
 import ClientForm, { type FormData } from "../components/ClientForm";
 import CustomFamilyNode from "./CustomFamilyNode";
@@ -44,7 +45,6 @@ const MainFlow = () => {
 
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
-  const navigate = useNavigate();
 
   const handleFormSubmit = (data: FormData) => {
     setFormData(data);
@@ -129,11 +129,11 @@ const MainFlow = () => {
 
   const nodeTypes = useMemo(() => {
     return {
-      customFamily: (nodeProps: Node<FamilyNodeData>) => (
+      customFamily: (nodeProps: NodeProps<FamilyNodeData>) => (
         <CustomFamilyNode {...nodeProps} setEditingNodeId={setEditingNodeId} setOpenDialog={setOpenDialog} />
       ),
     };
-  }, []);
+  }, [setEditingNodeId, setOpenDialog]);
 
   return (
     <div className="flex flex-col items-center w-full space-y-8">
