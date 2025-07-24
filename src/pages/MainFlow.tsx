@@ -17,6 +17,9 @@ import "@xyflow/react/dist/style.css";
 
 import ClientForm, { type FormData } from "../components/ClientForm";
 import CustomFamilyNode from "./CustomFamilyNode";
+import { Button } from "@/components/ui/button";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import WillDocument from "../components/WillDocument";
 
 type AssignedAsset = {
   id: string;
@@ -140,7 +143,32 @@ const MainFlow = () => {
       {!isSubmitted && <ClientForm onSubmit={handleFormSubmit} />}
       {isSubmitted && nodes.length > 0 && (
         <>
-          <div className="h-[700px] w-[1000px] border rounded-md">
+          <div className="h-[700px] w-[1000px] border rounded-md flex flex-col gap-6">
+            <PDFDownloadLink
+              document={
+                <WillDocument
+                  clientName={"THET HTAR SOE"}
+                  clientAddress={"Cyberjaya"}
+                  clientNRIC={"MI567769"}
+                  family={nodes
+                    .filter((n) => n.id.startsWith("family_"))
+                    .map((n) => ({
+                      name: n.data.name,
+                      relationship: n.data.relationship,
+                      assets: n.data.assets,
+                      assignedAssets: n.data.assignedAssets ?? [],
+                    }))}
+                />
+              }
+              fileName="will.pdf"
+            >
+              {({ loading }) => (
+                <Button variant="outline" className="text-white w-44">
+                  {loading ? "Preparing PDF..." : "Save and Download Will"}
+                </Button>
+              )}
+            </PDFDownloadLink>
+
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -157,6 +185,7 @@ const MainFlow = () => {
                 });
               }}
               nodeTypes={nodeTypes}
+              className="border border-gray-400 rounded-md"
             >
               <Controls />
               <Background />
