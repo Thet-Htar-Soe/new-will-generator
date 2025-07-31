@@ -1,7 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
+import { useFormStore } from "@/store/useFormStore";
 
 const SideBar = () => {
   const location = useLocation();
+  const formData = useFormStore((state) => state.data);
+  const isDisabled = !formData.trustatorName || !formData.trusteeName;
 
   return (
     <div className="w-48 bg-black text-white min-h-screen p-4 border-e-1 border-e-amber-600">
@@ -16,6 +19,12 @@ const SideBar = () => {
         </li>
         <li className="border-b-1 border-b-amber-600">
           <Link
+            onClick={(e) => {
+              if (isDisabled) {
+                e.preventDefault();
+                alert("Please fill in testator and trustee information first.");
+              }
+            }}
             to="/selection"
             className={`block px-3 py-2 rounded hover:bg-gray-700 ${
               location.pathname === "/selection" || location.pathname === "/diagram" ? "text-amber-400" : ""
