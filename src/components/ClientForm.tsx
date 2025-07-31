@@ -1,108 +1,160 @@
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef } from "react";
-
-const familyMemberSchema = z.object({
-  id: z.number(),
-  name: z.string().nonempty("Name is required"),
-  relationship: z.string().nonempty("Relationship is required"),
-  assets: z.number().optional(),
-});
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { useFormStore } from "@/store/useFormStore";
+import { useNavigate } from "react-router-dom";
+import SideBar from "./Sidebar";
 
 const formSchema = z.object({
-  asset_one: z.number().nonnegative("Must be non-negative"),
-  asset_two: z.number().nonnegative("Must be non-negative"),
-  asset_three: z.number().nonnegative("Must be non-negative"),
-  family_mem: z.array(familyMemberSchema),
+  trustatorName: z.string().nonempty("Trustator name is required"),
+  trustatorNRIC: z.string().nonempty("Trustator NRIC is required"),
+  trustatorAddress: z.string().nonempty("Trustator address is required"),
+
+  trusteeName: z.string().nonempty("Trustee name is required"),
+  trusteeNRIC: z.string().nonempty("Trustee NRIC is required"),
+  trusteeAddress: z.string().nonempty("Trustee address is required"),
+
+  alternateTrusteeName: z.string().optional(),
+  alternateTrusteeAddress: z.string().optional(),
+  alternateTrusteeNRIC: z.string().optional(),
+
+  signingDay: z.string().nonempty(),
+  signingMonth: z.string().nonempty(),
+  // signingYear: z.string().nonempty(),
 });
 
-export type FormData = z.infer<typeof formSchema>;
-
-export default function ClientForm({ onSubmit }: { onSubmit: (data: FormData) => void }) {
-  const idCounter = useRef(1);
-
+export default function ClientForm() {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors },
-  } = useForm<FormData>({
+  } = useForm({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      asset_one: 0,
-      asset_two: 0,
-      asset_three: 0,
-      family_mem: [{ id: 1, name: "", relationship: "", assets: undefined }],
-    },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "family_mem",
-  });
+  const setData = useFormStore((state) => state.setData);
+  const beneficiaries = useFormStore((state) => state.beneficiaries);
+  const properties = useFormStore((state) => state.properties);
+  const addBeneficiary = useFormStore((state) => state.addBeneficiary);
+  const addProperty = useFormStore((state) => state.addProperty);
+  const updateBeneficiary = useFormStore((state) => state.updateBeneficiary);
+  const updateProperty = useFormStore((state) => state.updateProperty);
 
-  const handleAdd = () => {
-    idCounter.current += 1;
-    append({ id: idCounter.current, name: "", relationship: "", assets: undefined });
+  const [showAdditionalTrustee, setShowAdditionalTrustee] = useState(false);
+  const navigation = useNavigate();
+  const onSubmit = (data: any) => {
+    const fullData = {
+      ...data,
+      beneficiaries,
+      properties,
+    };
+
+    setData(fullData);
+    console.log("submitted full data", fullData);
+    navigation("/selection");
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="bg-white space-y-6 p-6 border rounded-md shadow-md max-w-xl mx-auto"
-    >
-      <div>
-        <h3 className="font-semibold text-lg mb-2">Assets</h3>
-        <label className="block text-sm mb-1 text-neutral-500">Asset One</label>
-        <input type="number" {...register("asset_one", { valueAsNumber: true })} className="border p-2 w-full mb-2" />
-        <p className="text-red-500 text-sm">{errors.asset_one?.message}</p>
+    <div className="bg-black min-h-screen flex">
+      <SideBar />
+      <div className="py-6  max-w-3xl mx-auto">
+        <form onSubmit={handleSubmit(onSubmit)} className="bg-white space-y-6 p-6 border rounded-md shadow-md">
+          <h2 className="text-xl font-semibold">Trustator Information</h2>
+          <Input {...register("trustatorName")} placeholder="Trustator Name" />
+          <p className="text-red-500 text-sm">{errors.trustatorName?.message}</p>
 
-        <label className="block text-sm mb-1 text-neutral-500">Asset Two</label>
-        <input type="number" {...register("asset_two", { valueAsNumber: true })} className="border p-2 w-full mb-2" />
-        <p className="text-red-500 text-sm">{errors.asset_two?.message}</p>
+          <Input {...register("trustatorNRIC")} placeholder="Trustator NRIC" />
+          <p className="text-red-500 text-sm">{errors.trustatorNRIC?.message}</p>
 
-        <label className="block text-sm mb-1 text-neutral-500">Asset Three</label>
-        <input type="number" {...register("asset_three", { valueAsNumber: true })} className="border p-2 w-full" />
-        <p className="text-red-500 text-sm">{errors.asset_three?.message}</p>
-      </div>
+          <Input {...register("trustatorAddress")} placeholder="Trustator Address" />
+          <p className="text-red-500 text-sm">{errors.trustatorAddress?.message}</p>
 
-      <div>
-        <h3 className="font-semibold text-lg mb-2">Family Members</h3>
-        {fields.map((field, index) => (
-          <div key={field.id} className="p-4 mb-4 rounded-md relative bg-blue-200 text-black">
-            <p className="font-medium mb-2">Person {index + 1}</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm mb-1">Name</label>
-                <input {...register(`family_mem.${index}.name`)} className="border p-2 w-full" />
-                <p className="text-red-500 text-sm">{errors.family_mem?.[index]?.name?.message}</p>
-              </div>
-              <div>
-                <label className="block text-sm mb-1">Relationship</label>
-                <input {...register(`family_mem.${index}.relationship`)} className="border p-2 w-full" />
-                <p className="text-red-500 text-sm">{errors.family_mem?.[index]?.relationship?.message}</p>
-              </div>
-            </div>
+          <h2 className="text-xl font-semibold">Trustee Information</h2>
+          <Input {...register("trusteeName")} placeholder="Trustee Name" />
+          <p className="text-red-500 text-sm">{errors.trusteeName?.message}</p>
+
+          <Input {...register("trusteeNRIC")} placeholder="Trustee NRIC" />
+          <p className="text-red-500 text-sm">{errors.trusteeNRIC?.message}</p>
+
+          <Input {...register("trusteeAddress")} placeholder="Trustee Address" />
+          <p className="text-red-500 text-sm">{errors.trusteeAddress?.message}</p>
+
+          {!showAdditionalTrustee ? (
             <button
               type="button"
-              onClick={() => remove(index)}
-              className="absolute top-2 right-2 text-white cursor-pointer"
+              className="text-blue-600 underline mt-2"
+              onClick={() => setShowAdditionalTrustee(true)}
             >
-              ✖
+              + Add Additional Trustee
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Additional Trustee</h3>
+              <Input {...register("alternateTrusteeName")} placeholder="Alternate Trustee Name" />
+              <Input {...register("alternateTrusteeNRIC")} placeholder="Alternate Trustee NRIC" />
+              <Input {...register("alternateTrusteeAddress")} placeholder="Alternate Trustee Address" />
+            </div>
+          )}
+
+          <h2 className="text-xl font-semibold">Property Details</h2>
+          {properties.map((property, index) => (
+            <div key={index} className="space-y-2 border p-4 rounded-md bg-gray-50">
+              <Input
+                placeholder="Property Description"
+                value={property.description}
+                onChange={(e) => updateProperty(index, "description", e.target.value)}
+              />
+              <Input
+                placeholder="Postal Address"
+                value={property.postalAddress}
+                onChange={(e) => updateProperty(index, "postalAddress", e.target.value)}
+              />
+            </div>
+          ))}
+          {/* <button type="button" className="text-blue-600 underline" onClick={addProperty}>
+            + Add Property
+          </button> */}
+
+          <h2 className="text-xl font-semibold">Beneficiaries</h2>
+          {beneficiaries.map((beneficiary, index) => (
+            <div key={index} className="space-y-2 border p-4 rounded-md bg-gray-50">
+              <Input
+                placeholder="Beneficiary Name"
+                value={beneficiary.name}
+                onChange={(e) => updateBeneficiary(index, "name", e.target.value)}
+              />
+              <Input
+                placeholder="Beneficiary NRIC"
+                value={beneficiary.nric}
+                onChange={(e) => updateBeneficiary(index, "nric", e.target.value)}
+              />
+              <Input
+                placeholder="Beneficiary Address"
+                value={beneficiary.address}
+                onChange={(e) => updateBeneficiary(index, "address", e.target.value)}
+              />
+            </div>
+          ))}
+          {/* <button type="button" className="text-blue-600 underline" onClick={addBeneficiary}>
+            + Add Beneficiary
+          </button> */}
+
+          <h2 className="text-xl font-semibold mt-6">Signing Date</h2>
+          <div className="grid grid-cols-3 gap-4">
+            <Input {...register("signingDay")} placeholder="Day" />
+            <Input {...register("signingMonth")} placeholder="Month" />
+            {/* <Input {...register("signingYear")} placeholder="Year" /> */}
+          </div>
+
+          <div className="flex justify-end mt-6">
+            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+              Submit
             </button>
           </div>
-        ))}
-        <button type="button" onClick={handleAdd} className="bg-black text-white px-3 py-1 rounded cursor-pointer">
-          + Add Family Member
-        </button>
+        </form>
       </div>
-
-      <div className="flex justify-end">
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-          Submit
-        </button>
-      </div>
-    </form>
+    </div>
   );
 }

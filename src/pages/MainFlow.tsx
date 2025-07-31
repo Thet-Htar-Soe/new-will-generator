@@ -42,7 +42,6 @@ const MainFlow = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<FamilyNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<CustomEdgeData>>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [assetOptions, setAssetOptions] = useState<number[]>([]);
   const [familyOptions, setFamilyOptions] = useState<number[]>([]);
   const [formData, setFormData] = useState<FormData | null>(null);
 
@@ -51,8 +50,6 @@ const MainFlow = () => {
 
   const handleFormSubmit = (data: FormData) => {
     setFormData(data);
-    setAssetOptions([data.asset_one, data.asset_two, data.asset_three]);
-    setFamilyOptions(data.family_mem.map((m) => m.id));
     setIsSubmitted(true);
   };
 
