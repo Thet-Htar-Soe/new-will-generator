@@ -9,6 +9,7 @@ import { generateFamilyDataFromFlow } from "@/components/generateFamilyDataFlow"
 import { PDFDocument } from "pdf-lib";
 import download from "downloadjs";
 import { useState } from "react";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 const GenerateDiagram = () => {
   const formData = useFormStore((state) => state.data);
@@ -25,6 +26,9 @@ const GenerateDiagram = () => {
     () => properties.map((val, index) => (val ? index : -1)).filter((i) => i !== -1),
     [properties]
   );
+
+  console.log("Selected Beneficiaries", selectedBeneficiaries);
+  console.log("Selected Properties", selectedProperties);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -125,6 +129,9 @@ const GenerateDiagram = () => {
     }
   };
 
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+
   const fillAndDownloadPdf = async () => {
     // if (!uploadedPdf) return;
     if (!templatePdfBytes) return;
@@ -144,17 +151,22 @@ const GenerateDiagram = () => {
     form.getTextField("trusteeName").setText(formData.trusteeName);
     form.getTextField("trusteeNRIC").setText(formData.trusteeNRIC);
     form.getTextField("trusteeAddress").setText(formData.trusteeAddress || "");
-    form.getTextField("beneficiariesName").setText(formData.beneficiaries[0].name || "");
-    form.getTextField("beneficiariesNRIC").setText(formData.beneficiaries[0].nric || "");
-    form.getTextField("propertyDetail").setText(formData.properties[0].description || "");
-    form.getTextField("propertyAddress").setText(formData.properties[0].postalAddress || "");
-    form.getTextField("alternateTrusteeName").setText(formData.alternateTrusteeName || "");
-    form.getTextField("alternateTrusteeAddress").setText(formData.alternateTrusteeAddress || "");
+    form.getTextField("beneficiariesName").setText(formData.beneficiaries[0].name || "BeneficiaryName");
+    form.getTextField("beneficiariesNRIC").setText(formData.beneficiaries[0].nric || "BeneficiaryNRIC");
+    form.getTextField("propertyDetail").setText(formData.properties[0].description || "PropertyDetail");
+    form.getTextField("propertyAddress").setText(formData.properties[0].postalAddress || "PropertyAddress");
+    form.getTextField("alternateTrusteeName").setText(formData.alternateTrusteeName || "AlternateTrusteeName");
+    form.getTextField("alternateTrusteeAddress").setText(formData.alternateTrusteeAddress || "AlternateTrusteeAddress");
     form.getTextField("day").setText(formData.signingDay || "");
     form.getTextField("month").setText(formData.signingMonth || "");
 
     const pdfBytes = await pdfDoc.save();
-    download(pdfBytes, "filled-will.pdf", "application/pdf");
+    // download(pdfBytes, "filled-will.pdf", "application/pdf");
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+
+    setPdfPreviewUrl(url);
+    setIsPreviewDialogOpen(true);
   };
 
   const family = generateFamilyDataFromFlow(nodes, edges);
@@ -172,11 +184,12 @@ const GenerateDiagram = () => {
   };
 
   return (
-    <div className="flex bg-black">
-      <SideBar />
-      <div className="mt-6 w-xl mx-auto flex flex-col gap-4">
-        <div className="flex gap-4 items-center">
-          {/* <input type="file" accept="application/pdf" onChange={handleUpload} className="text-white" />
+    <>
+      <div className="flex bg-black">
+        <SideBar />
+        <div className="mt-6 w-xl mx-auto flex flex-col gap-4">
+          <div className="flex gap-4 items-center">
+            {/* <input type="file" accept="application/pdf" onChange={handleUpload} className="text-white" />
           <button
             onClick={fillAndDownloadPdf}
             disabled={!uploadedPdf}
@@ -184,42 +197,82 @@ const GenerateDiagram = () => {
           >
             Upload Will Template
           </button> */}
-          <button
-            onClick={fillAndDownloadPdf}
-            className="bg-green-600 text-white rounded px-4 py-2 disabled:opacity-50"
-          >
-            Download Will (Default Template)
-          </button>
-        </div>
-        <div className="flex gap-4 items-center">
-          {nodes.length > 0 && (
-            <PDFDownloadLink
-              className=" bg-amber-500 rounded-md text-white px-4 py-2 text-center"
-              document={<WillDocument {...pdfProps} />}
-              fileName="will-document.pdf"
+            <button
+              onClick={fillAndDownloadPdf}
+              className="bg-green-600 text-white rounded px-4 py-2 disabled:opacity-50"
             >
-              {({ loading }) => (loading ? "Preparing PDF..." : "Download Will (Hard-Coded)")}
-            </PDFDownloadLink>
-          )}
-        </div>
-        <div className="h-[600px] border">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={(params: Connection) =>
-              setEdges((eds) => addEdge({ ...params, id: `${params.source}-${params.target}` }, eds))
-            }
-            isValidConnection={isValidConnection}
-            className="border border-gray-400 rounded-md"
-          >
-            <Controls />
-            <Background />
-          </ReactFlow>
+              Preview Will (Default Template)
+            </button>
+          </div>
+          {/* {pdfPreviewUrl && (
+          <div className="mt-4">
+            <iframe src={pdfPreviewUrl} title="PDF Preview" width="100%" height="600px" className="border rounded" />
+            <div className="mt-2">
+              <a href={pdfPreviewUrl} download="filled-will.pdf" className="bg-blue-600 text-white px-4 py-2 rounded">
+                Download PDF
+              </a>
+            </div>
+          </div>
+        )} */}
+
+          <div className="flex gap-4 items-center">
+            {nodes.length > 0 && (
+              <PDFDownloadLink
+                className=" bg-amber-500 rounded-md text-white px-4 py-2 text-center"
+                document={<WillDocument {...pdfProps} />}
+                fileName="will-document.pdf"
+              >
+                {({ loading }) => (loading ? "Preparing PDF..." : "Download Will (Hard-Coded)")}
+              </PDFDownloadLink>
+            )}
+          </div>
+          <div className="h-[600px] border">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={(params: Connection) =>
+                setEdges((eds) => addEdge({ ...params, id: `${params.source}-${params.target}` }, eds))
+              }
+              isValidConnection={isValidConnection}
+              className="border border-gray-400 rounded-md"
+            >
+              <Controls />
+              <Background />
+            </ReactFlow>
+          </div>
         </div>
       </div>
-    </div>
+      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+        <DialogContent className="max-w-screen-xl w-full h-[90vh] flex flex-col bg-white">
+          <DialogHeader>
+            <DialogTitle>Preview Fillable Will Template</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            {pdfPreviewUrl && (
+              <iframe
+                src={pdfPreviewUrl}
+                // src={`${pdfPreviewUrl}#toolbar=1`}
+                title="PDF Preview"
+                width="100%"
+                height="100%"
+                className="w-full h-full border rounded"
+              />
+            )}
+          </div>
+          <DialogFooter className="mt-4">
+            <a
+              href={pdfPreviewUrl ?? "#"}
+              download="filled-will.pdf"
+              className="bg-emerald-600 text-white px-4 py-2 rounded"
+            >
+              Download PDF
+            </a>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
